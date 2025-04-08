@@ -7,7 +7,6 @@ import (
 	"strconv"
 )
 
-// ValidationError represents a validation failure.
 type ValidationError struct {
 	Field string
 	Err   string
@@ -17,12 +16,10 @@ func (e ValidationError) Error() string {
 	return fmt.Sprintf("Field '%s': %s", e.Field, e.Err)
 }
 
-// ValidateStruct uses reflection to validate struct fields based on `validate` tags.
 func ValidateStruct(s interface{}) []error {
 	var errs []error
 	v := reflect.ValueOf(s)
 
-	// If s is a pointer, get the underlying value.
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
@@ -33,11 +30,9 @@ func ValidateStruct(s interface{}) []error {
 		fieldType := t.Field(i)
 		tag := fieldType.Tag.Get("validate")
 
-		// Process validation tags if present.
 		if tag != "" {
 			rules := parseTag(tag)
 
-			// "required" rule: field must not be empty or zero.
 			if rules["required"] == "true" {
 				if fieldVal.Kind() == reflect.String && fieldVal.String() == "" {
 					errs = append(errs, ValidationError{Field: fieldType.Name, Err: "is required"})
@@ -50,7 +45,6 @@ func ValidateStruct(s interface{}) []error {
 				}
 			}
 
-			// "regex" rule: for string fields only.
 			if pattern, ok := rules["regex"]; ok && fieldVal.Kind() == reflect.String {
 				matched, err := regexp.MatchString(pattern, fieldVal.String())
 				if err != nil || !matched {
@@ -58,7 +52,6 @@ func ValidateStruct(s interface{}) []error {
 				}
 			}
 
-			// "min" rule: for numeric fields.
 			if minStr, ok := rules["min"]; ok {
 				min, err := strconv.ParseFloat(minStr, 64)
 				if err == nil {
@@ -74,7 +67,6 @@ func ValidateStruct(s interface{}) []error {
 				}
 			}
 
-			// "max" rule: for numeric fields.
 			if maxStr, ok := rules["max"]; ok {
 				max, err := strconv.ParseFloat(maxStr, 64)
 				if err == nil {
@@ -91,11 +83,9 @@ func ValidateStruct(s interface{}) []error {
 			}
 		}
 
-		// If the field is a nested struct, validate recursively.
 		if fieldVal.Kind() == reflect.Struct {
 			nestedErrs := ValidateStruct(fieldVal.Interface())
 			for _, err := range nestedErrs {
-				// Prepend parent field name for clarity.
 				if vErr, ok := err.(ValidationError); ok {
 					errs = append(errs, ValidationError{Field: fieldType.Name + "." + vErr.Field, Err: vErr.Err})
 				} else {
@@ -107,8 +97,6 @@ func ValidateStruct(s interface{}) []error {
 	return errs
 }
 
-// parseTag splits the `validate` tag into key/value pairs.
-// For example: `required,regex=^[A-Za-z]+$,min=10,max=100`
 func parseTag(tag string) map[string]string {
 	rules := make(map[string]string)
 	parts := splitComma(tag)
@@ -122,7 +110,6 @@ func parseTag(tag string) map[string]string {
 	return rules
 }
 
-// splitComma splits a string by commas.
 func splitComma(s string) []string {
 	var parts []string
 	current := ""
@@ -140,7 +127,6 @@ func splitComma(s string) []string {
 	return parts
 }
 
-// splitEqual splits a string at the first '='.
 func splitEqual(s string) []string {
 	var parts []string
 	current := ""
@@ -155,8 +141,6 @@ func splitEqual(s string) []string {
 	return []string{s}
 }
 
-// Example structures for validation.
-
 type Address struct {
 	Street string `validate:"required"`
 	City   string `validate:"required"`
@@ -170,11 +154,11 @@ type Person struct {
 
 func main() {
 	p := Person{
-		Name: "", // Invalid: required field empty.
-		Age:  16, // Invalid: less than min 18.
+		Name: "",
+		Age:  16,
 		Address: Address{
-			Street: "",         // Invalid: required field empty.
-			City:   "New York", // Valid.
+			Street: "",
+			City:   "New York",
 		},
 	}
 	errors := ValidateStruct(p)
