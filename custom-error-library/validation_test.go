@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	validation "github.com/amanycodes/golang-exercises/02-custom-error-library"
+	validation "github.com/amanycodes/go-playground/custom-error-library"
 )
 
 func TestValidationInput(t *testing.T) {
