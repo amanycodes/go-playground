@@ -23,4 +23,21 @@ func main() {
 		fmt.Println(msg2)
 	}
 
+	// for select loop
+
+	charchnl := make(chan string, 3)
+	chars := []string{"a", "b", "c"}
+
+	for _, s := range chars {
+		// select {
+		// case charchnl <- s:
+		// }
+		charchnl <- s
+	}
+
+	close(charchnl)
+
+	for result := range charchnl {
+		fmt.Println(result)
+	}
 }
